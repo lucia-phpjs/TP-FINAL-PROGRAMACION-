@@ -20,7 +20,7 @@ def index():
 @app.route('/candidatos')
 def vista_candidatos():
     """Muestra la lista de candidatos registrados."""
-    return render_template('candidato.html')
+    return render_template('candidatos.html')
 
 @app.route('/candidatos/nuevo')
 def vista_nuevo_candidato():
