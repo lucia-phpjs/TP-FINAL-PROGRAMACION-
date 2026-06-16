@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+
+<section class="contenedor">
+
+    <div class="encabezado_pagina">
+
+        <h1>
+            Candidatos Registrados
+        </h1>
+
+        <a
+            href="/registro/candidato"
+            class="btn_principal"
+        >
+            Nuevo candidato
+        </a>
+
+    </div>
+
+    <table class="tabla">
+
+        <thead>
+
+            <tr>
+
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Experiencia</th>
+                <th>Habilidades</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody id="tabla-candidatos">
+
+            <tr>
+
+                <td colspan="5">
+                    Cargando...
+                </td>
+
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</section>
+
+<script>
+
+async function cargarCandidatos() {
+
+    const tbody =
+        document.getElementById("tabla-candidatos");
+
+    try {
+
+        const response =
+            await fetch("/api/candidatos");
+
+        const candidatos =
+            await response.json();
+
+        tbody.innerHTML = "";
+
+        candidatos.forEach(c => {
+
+            tbody.innerHTML += `
+
+                <tr>
+
+                    <td>${c.nombre}</td>
+
+                    <td>${c.email}</td>
+
+                    <td>${c.telefono}</td>
+
+                    <td>
+                        ${c.anos_experiencia}
+                    </td>
+
+                    <td>
+                        ${c.habilidades.join(", ")}
+                    </td>
+
+                </tr>
+
+            `;
+
+        });
+
+    }
+    catch {
+
+        tbody.innerHTML =
+            "<tr><td colspan='5'>Error al cargar candidatos</td></tr>";
+
+    }
+
+}
+
+cargarCandidatos();
+
+</script>
+
+{% endblock %}
