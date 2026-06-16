@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+
+<section class="contenedor">
+
+    <h1>
+        Entrevistas Programadas
+    </h1>
+
+    <table class="tabla">
+
+        <thead>
+
+            <tr>
+
+                <th>Fecha</th>
+
+                <th>Hora</th>
+
+                <th>Entrevistador</th>
+
+                <th>Sala</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody id="tabla-turnos">
+
+            <tr>
+
+                <td colspan="4">
+
+                    No hay entrevistas programadas.
+
+                </td>
+
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</section>
+
+{% endblock %}
