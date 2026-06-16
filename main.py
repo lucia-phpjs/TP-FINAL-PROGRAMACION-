@@ -1,110 +1,203 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from datetime import date, timedelta
+from flask import Flask, render_template, request, jsonify
 from servicios.sistema import SistemaEntrevistas
 
-def ejecutar_demo(sistema: SistemaEntrevistas):
-    """Ejecuta una demostración completa."""
-    print("\n" + "="*60)
-    print("EJECUTANDO DEMO COMPLETA")
-    print("="*60)
-    
-    print("\n📝 REGISTRANDO CANDIDATOS...")
-    cand1 = sistema.registrar_candidato("Alice Johnson", "alice@email.com", "1111111111", 6, "Senior Developer")
-    if cand1: cand1.agregar_multiples_habilidades(["Python", "JavaScript", "SQL", "AWS"])
-    
-    cand2 = sistema.registrar_candidato("Bob Smith", "bob@email.com", "2222222222", 3, "Full Stack Developer")
-    if cand2: cand2.agregar_multiples_habilidades(["Python", "React", "PostgreSQL"])
-    
-    cand3 = sistema.registrar_candidato("Carol White", "carol@email.com", "3333333333", 8, "Technical Lead")
-    if cand3: cand3.agregar_multiples_habilidades(["Python", "JavaScript", "AWS", "Docker", "Kubernetes"])
-    
-    print("\n🔍 CREANDO BÚSQUEDAS...")
-    busq1 = sistema.crear_busqueda("Senior Python Developer", "Buscamos dev senior", 80000, 120000, ["Python", "AWS", "SQL"], 5)
-    busq2 = sistema.crear_busqueda("Full Stack Developer", "Dev full stack", 40000, 70000, ["Python", "React", "PostgreSQL"], 2)
-    
-    print("\n📊 EVALUANDO CANDIDATOS...")
-    sistema.evaluar_candidato(cand1.id if cand1 else 1, busq1.id, "Juan Manager", "aprobado", 95, "Excelente perfil")
-    sistema.evaluar_candidato(cand2.id if cand2 else 2, busq2.id, "Juan Manager", "aprobado", 88, "Buen candidato")
-    sistema.evaluar_candidato(cand3.id if cand3 else 3, busq1.id, "Juan Manager", "aprobado", 98, "Perfecto match")
-    
-    print("\n📅 AGENDANDO TURNOS...")
-    fecha_manana = (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')
-    sistema.agendar_turno(1, fecha_manana, "09:30", "Luis Recruiter", "Sala A")
-    sistema.agendar_turno(2, fecha_manana, "10:00", "Luis Recruiter", "Sala B")
-    sistema.agendar_turno(3, fecha_manana, "14:00", "Maria HR", "Sala C")
-    
-    print("\n✅ DEMO COMPLETADA\n")
-    sistema.generar_reportes()
+# Inicializamos la aplicación Flask y el motor central de POO
+app = Flask(__name__)
+sistema = SistemaEntrevistas()
 
-def menu_principal():
-    """Menú principal de la aplicación."""
-    sistema = SistemaEntrevistas()
-    
-    while True:
-        print("\n" + "="*60)
-        print("SISTEMA DE TURNOS DE ENTREVISTAS LABORALES")
-        print("="*60)
-        print("1. Registrar candidato")
-        print("2. Crear búsqueda de empleo")
-        print("3. Evaluar candidato")
-        print("4. Agendar turno")
-        print("5. Generar reportes")
-        print("6. Ejecutar demo completa")
-        print("0. Salir")
-        print("="*60)
-        
-        opcion = input("Selecciona una opción: ").strip()
-        
-        if opcion == "1":
-            nombre = input("Nombre: ")
-            email = input("Email: ")
-            telefono = input("Teléfono: ")
-            anos = int(input("Años de experiencia: "))
-            cv = input("CV/Descripción: ")
-            habilidades = input("Habilidades (separadas por coma): ").split(",")
-            cand = sistema.registrar_candidato(nombre, email, telefono, anos, cv)
-            if cand:
-                cand.agregar_multiples_habilidades([h.strip() for h in habilidades])
-        
-        elif opcion == "2":
-            titulo = input("Título del puesto: ")
-            desc = input("Descripción: ")
-            sal_min = float(input("Salario mínimo: "))
-            sal_max = float(input("Salario máximo: "))
-            skills = input("Skills requeridos (separados por coma): ").split(",")
-            exp_min = int(input("Experiencia mínima (años): "))
-            sistema.crear_busqueda(titulo, desc, sal_min, sal_max, [s.strip() for s in skills], exp_min)
-        
-        elif opcion == "3":
-            cand_id = int(input("ID del candidato: "))
-            busq_id = int(input("ID de la búsqueda: "))
-            evaluador = input("Nombre del evaluador: ")
-            resultado = input("Resultado (aprobado/rechazado): ")
-            puntuacion = float(input("Puntuación (0-100): "))
-            comentarios = input("Comentarios: ")
-            sistema.evaluar_candidato(cand_id, busq_id, evaluador, resultado, puntuacion, comentarios)
-        
-        elif opcion == "4":
-            eval_id = int(input("ID de evaluación: "))
-            fecha = input("Fecha (YYYY-MM-DD): ")
-            hora = input("Hora (HH:MM): ")
-            entrevistador = input("Nombre del entrevistador: ")
-            sala = input("Sala: ")
-            sistema.agendar_turno(eval_id, fecha, hora, entrevistador, sala)
-        
-        elif opcion == "5":
-            sistema.generar_reportes()
-        
-        elif opcion == "6":
-            ejecutar_demo(sistema)
-        
-        elif opcion == "0":
-            print("¡Hasta luego!")
-            break
-        else:
-            print("❌ Opción inválida")
+# ============================================================================
+# 1. RUTAS DE NAVEGACIÓN (Renderizado de Vistas HTML)
+# ============================================================================
 
-if __name__ == "__main__":
-    menu_principal()
+@app.route('/')
+def index():
+    """Ruta raíz que renderiza el panel principal o Dashboard."""
+    return render_template('index.html')
+
+@app.route('/candidatos')
+def vista_candidatos():
+    """Muestra la lista de candidatos registrados."""
+    return render_template('candidato.html')
+
+@app.route('/candidatos/nuevo')
+def vista_nuevo_candidato():
+    """Muestra el formulario para crear un nuevo candidato."""
+    return render_template('candidato_nuevo.html')
+
+@app.route('/busquedas')
+def vista_busquedas():
+    """Muestra el listado de vacantes y búsquedas laborales."""
+    return render_template('busquedas.html')
+
+@app.route('/busquedas/nueva')
+def vista_nueva_busqueda():
+    """Muestra el formulario para abrir una nueva búsqueda."""
+    return render_template('busqueda_nueva.html')
+
+@app.route('/evaluaciones')
+def vista_evaluaciones():
+    """Muestra el panel de evaluaciones y calificaciones."""
+    return render_template('evaluaciones.html')
+
+@app.route('/turnos')
+def vista_turnos():
+    """Muestra la agenda y el calendario de entrevistas."""
+    return render_template('turnos.html')
+
+
+
+# 2. ENDPOINTS DE LA API REST (Control de Datos JSON)
+
+
+# --- CONTROLADOR DE CANDIDATOS ---
+@app.route('/api/candidatos', methods=['GET', 'POST'])
+def api_candidatos():
+    # CASO GET: El frontend solicita la lista de todos los candidatos
+    if request.method == 'GET':
+        lista_candidatos = []
+        for candidato in sistema._candidatos.values():
+            # Extraemos los atributos internos del objeto de POO
+            lista_candidatos.append(candidato.__dict__)
+        return jsonify(lista_candidatos), 200
+    
+    # CASO POST: El frontend envía datos para dar de alta un candidato
+    elif request.method == 'POST':
+        datos = request.get_json() or {}
+        try:
+            # Invoca las validaciones encapsuladas en tu capa de servicios/modelos
+            nuevo_candidato = sistema.registrar_candidato(
+                nombre=datos.get('nombre'),
+                email=datos.get('email'),
+                telefono=datos.get('telefono'),
+                anos_experiencia=int(datos.get('anos_experiencia', 0)),
+                cv=datos.get('cv', '')
+            )
+            
+            # Si el JSON trae una lista de habilidades, las inyectamos en el objeto
+            if nuevo_candidato and 'habilidades' in datos:
+                nuevo_candidato.agregar_multiples_habilidades(datos['habilidades'])
+                
+            return jsonify({
+                "status": "success", 
+                "id": nuevo_candidato.id if nuevo_candidato else None
+            }), 201
+            
+        except Exception as e:
+            # Si una validación de negocio falla (ej. Email inválido), captura el error
+            return jsonify({"status": "error", "message": str(e)}), 400
+
+
+# --- CONTROLADOR DE BÚSQUEDA ---
+@app.route('/api/busquedas', methods=['GET', 'POST'])
+def api_busquedas():
+    if request.method == 'GET':
+        lista_busquedas = []
+        for busqueda in sistema._busquedas.values():
+            lista_busquedas.append(busqueda.__dict__)
+        return jsonify(lista_busquedas), 200
+    
+    elif request.method == 'POST':
+        datos = request.get_json() or {}
+        try:
+            nueva_busqueda = sistema.crear_busqueda(
+                titulo_puesto=datos.get('titulo_puesto'),
+                descripcion=datos.get('descripcion'),
+                salario_minimo=float(datos.get('salario_minimo', 0)),
+                salario_maximo=float(datos.get('salario_maximo', 0)),
+                skills_requeridos=datos.get('skills_requeridos', []),
+                experiencia_minima=int(datos.get('experiencia_minima', 0))
+            )
+            return jsonify({
+                "status": "success", 
+                "id": nueva_busqueda.id if nueva_busqueda else None
+            }), 201
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 400
+
+
+# CONTROLADOR DE EVALUACIONES 
+@app.route('/api/evaluaciones', methods=['GET', 'POST'])
+def api_evaluaciones():
+    if request.method == 'GET':
+        lista_evaluaciones = []
+        for e in sistema._evaluaciones.values():
+
+            # En vez de mandar el objeto Candidato entero, extraemos texto/ID primitivos.
+            lista_evaluaciones.append({
+                "id": e.id,
+                "candidato_id": e.candidato.id,
+                "candidato_nombre": e.candidato.nombre,
+                "busqueda_id": e.busqueda.id,
+                "busqueda_titulo": e.busqueda.titulo_puesto,
+                "evaluador": e.evaluador,
+                "resultado": e.resultado.value,  # .value extrae el str limpio del Enum
+                "puntuacion": e.puntuacion,
+                "comentarios": e.comentarios
+            })
+        return jsonify(lista_evaluaciones), 200
+    
+    elif request.method == 'POST':
+        datos = request.get_json() or {}
+        try:
+            nueva_eval = sistema.evaluar_candidato(
+                candidato_id=int(datos.get('candidato_id')),
+                busqueda_id=int(datos.get('busqueda_id')),
+                evaluador=datos.get('evaluador'),
+                resultado=datos.get('resultado'),
+                puntuacion=float(datos.get('puntuacion', 0)),
+                comentarios=datos.get('comentarios', '')
+            )
+            return jsonify({
+                "status": "success", 
+                "id": nueva_eval.id if nueva_eval else None
+            }), 201
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 400
+
+
+# CONTROLADOR DE TURNOS 
+@app.route('/api/turnos', methods=['GET', 'POST'])
+def api_turnos():
+    if request.method == 'GET':
+        lista_turnos = []
+        # Buscamos en el diccionario interno del objeto Calendario
+        for t in sistema._calendario._turnos.values():
+            lista_turnos.append({
+                "id": t.id,
+                "evaluacion_id": t.evaluacion.id,
+                "candidato_nombre": t.evaluacion.candidato.nombre,
+                "puesto": t.evaluacion.busqueda.titulo_puesto,
+                "fecha": str(t.fecha),  
+                "hora": t.hora,
+                "entrevistador": t.entrevistador,
+                "sala": t.sala,
+                "estado": t.estado.value  
+            })
+        return jsonify(lista_turnos), 200
+    
+    elif request.method == 'POST':
+        datos = request.get_json() or {}
+        try:
+            nuevo_turno = sistema.agendar_turno(
+                evaluacion_id=int(datos.get('evaluacion_id')),
+                fecha_str=datos.get('fecha'),
+                hora=datos.get('hora'),
+                entrevistador=datos.get('entrevistador'),
+                sala=datos.get('sala')
+            )
+            return jsonify({
+                "status": "success", 
+                "id": nuevo_turno.id if nuevo_turno else None
+            }), 201
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 400
+
+
+
+
+if __name__ == '__main__':
+    
+    app.run(debug=True, port=5000)
