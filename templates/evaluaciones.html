@@ -4,9 +4,66 @@
 
 <section class="contenedor">
 
-    <h1>
-        Evaluaciones
-    </h1>
+    <h1>Gestión de Evaluaciones</h1>
+
+    <div class="card_formulario">
+
+        <h2>Nueva Evaluación</h2>
+
+        <form id="formEvaluacion">
+
+            <label>Candidato</label>
+            <select id="candidato" required></select>
+
+            <label>Búsqueda</label>
+            <select id="busqueda" required></select>
+
+            <label>Evaluador</label>
+            <input
+                type="text"
+                id="evaluador"
+                required
+            >
+
+            <label>Resultado</label>
+            <select id="resultado">
+
+                <option value="aprobado">
+                    Aprobado
+                </option>
+
+                <option value="rechazado">
+                    Rechazado
+                </option>
+
+            </select>
+
+            <label>Puntuación</label>
+            <input
+                type="number"
+                id="puntuacion"
+                min="0"
+                max="100"
+                required
+            >
+
+            <label>Comentarios</label>
+            <textarea id="comentarios"></textarea>
+
+            <button
+                type="submit"
+                class="btn_principal"
+            >
+                Guardar evaluación
+            </button>
+
+        </form>
+
+    </div>
+
+    <hr>
+
+    <h2>Evaluaciones Registradas</h2>
 
     <table class="tabla">
 
@@ -14,28 +71,23 @@
 
             <tr>
 
+                <th>ID</th>
                 <th>Candidato</th>
-
                 <th>Búsqueda</th>
-
                 <th>Evaluador</th>
-
                 <th>Resultado</th>
-
                 <th>Puntuación</th>
 
             </tr>
 
         </thead>
 
-        <tbody id="tabla-evaluaciones">
+        <tbody id="tablaEvaluaciones">
 
             <tr>
 
-                <td colspan="5">
-
-                    No hay evaluaciones registradas.
-
+                <td colspan="6">
+                    Cargando...
                 </td>
 
             </tr>
@@ -45,5 +97,216 @@
     </table>
 
 </section>
+
+<script>
+
+async function cargarCandidatos() {
+
+    const response =
+        await fetch("/api/candidatos");
+
+    const candidatos =
+        await response.json();
+
+    const select =
+        document.getElementById("candidato");
+
+    select.innerHTML = "";
+
+    candidatos.forEach(c => {
+
+        select.innerHTML += `
+            <option value="${c.id}">
+                ${c.nombre}
+            </option>
+        `;
+
+    });
+
+}
+
+async function cargarBusquedas() {
+
+    const response =
+        await fetch("/api/busquedas");
+
+    const busquedas =
+        await response.json();
+
+    const select =
+        document.getElementById("busqueda");
+
+    select.innerHTML = "";
+
+    busquedas.forEach(b => {
+
+        select.innerHTML += `
+            <option value="${b.id}">
+                ${b.titulo_puesto}
+            </option>
+        `;
+
+    });
+
+}
+
+async function cargarEvaluaciones() {
+
+    const response =
+        await fetch("/api/evaluaciones");
+
+    const evaluaciones =
+        await response.json();
+
+    const tbody =
+        document.getElementById(
+            "tablaEvaluaciones"
+        );
+
+    tbody.innerHTML = "";
+
+    if(evaluaciones.length === 0){
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    No hay evaluaciones.
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    evaluaciones.forEach(e => {
+
+        tbody.innerHTML += `
+
+            <tr>
+
+                <td>${e.id}</td>
+
+                <td>
+                    ${e.candidato_nombre}
+                </td>
+
+                <td>
+                    ${e.busqueda_titulo}
+                </td>
+
+                <td>
+                    ${e.evaluador}
+                </td>
+
+                <td>
+                    ${e.resultado}
+                </td>
+
+                <td>
+                    ${e.puntuacion}
+                </td>
+
+            </tr>
+
+        `;
+
+    });
+
+}
+
+document
+.getElementById("formEvaluacion")
+.addEventListener(
+    "submit",
+    async function(e){
+
+        e.preventDefault();
+
+        const datos = {
+
+            candidato_id: parseInt(
+                document.getElementById(
+                    "candidato"
+                ).value
+            ),
+
+            busqueda_id: parseInt(
+                document.getElementById(
+                    "busqueda"
+                ).value
+            ),
+
+            evaluador:
+                document.getElementById(
+                    "evaluador"
+                ).value,
+
+            resultado:
+                document.getElementById(
+                    "resultado"
+                ).value,
+
+            puntuacion: parseFloat(
+                document.getElementById(
+                    "puntuacion"
+                ).value
+            ),
+
+            comentarios:
+                document.getElementById(
+                    "comentarios"
+                ).value
+
+        };
+
+        const response =
+            await fetch(
+                "/api/evaluaciones",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                        "application/json"
+                    },
+
+                    body:
+                    JSON.stringify(datos)
+                }
+            );
+
+        const resultado =
+            await response.json();
+
+        if(response.ok){
+
+            alert(
+                "Evaluación creada correctamente"
+            );
+
+            document
+                .getElementById(
+                    "formEvaluacion"
+                )
+                .reset();
+
+            cargarEvaluaciones();
+
+        } else {
+
+            alert(
+                resultado.message
+            );
+
+        }
+
+    }
+);
+
+cargarCandidatos();
+cargarBusquedas();
+cargarEvaluaciones();
+
+</script>
 
 {% endblock %}
