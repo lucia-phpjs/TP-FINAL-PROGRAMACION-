@@ -5,8 +5,82 @@
 <section class="contenedor">
 
     <h1>
-        Entrevistas Programadas
+        Agenda de Entrevistas
     </h1>
+
+    <div class="card_formulario">
+
+        <h2>
+            Nuevo Turno
+        </h2>
+
+        <form id="formTurno">
+
+            <label>
+                Evaluación
+            </label>
+
+            <select
+                id="evaluacion"
+                required
+            ></select>
+
+            <label>
+                Fecha
+            </label>
+
+            <input
+                type="date"
+                id="fecha"
+                required
+            >
+
+            <label>
+                Hora
+            </label>
+
+            <input
+                type="time"
+                id="hora"
+                required
+            >
+
+            <label>
+                Entrevistador
+            </label>
+
+            <input
+                type="text"
+                id="entrevistador"
+                required
+            >
+
+            <label>
+                Sala
+            </label>
+
+            <input
+                type="text"
+                id="sala"
+                required
+            >
+
+            <button
+                type="submit"
+                class="btn_principal"
+            >
+                Agendar entrevista
+            </button>
+
+        </form>
+
+    </div>
+
+    <hr>
+
+    <h2>
+        Entrevistas Programadas
+    </h2>
 
     <table class="tabla">
 
@@ -14,26 +88,24 @@
 
             <tr>
 
+                <th>ID</th>
+                <th>Candidato</th>
+                <th>Puesto</th>
                 <th>Fecha</th>
-
                 <th>Hora</th>
-
                 <th>Entrevistador</th>
-
                 <th>Sala</th>
 
             </tr>
 
         </thead>
 
-        <tbody id="tabla-turnos">
+        <tbody id="tablaTurnos">
 
             <tr>
 
-                <td colspan="4">
-
-                    No hay entrevistas programadas.
-
+                <td colspan="7">
+                    Cargando...
                 </td>
 
             </tr>
@@ -43,5 +115,208 @@
     </table>
 
 </section>
+
+<script>
+
+async function cargarEvaluaciones() {
+
+    const response =
+        await fetch(
+            "/api/evaluaciones"
+        );
+
+    const evaluaciones =
+        await response.json();
+
+    const select =
+        document.getElementById(
+            "evaluacion"
+        );
+
+    select.innerHTML = "";
+
+    evaluaciones.forEach(e => {
+
+        select.innerHTML += `
+            <option value="${e.id}">
+                ${e.candidato_nombre}
+                -
+                ${e.busqueda_titulo}
+            </option>
+        `;
+
+    });
+
+}
+
+async function cargarTurnos() {
+
+    const response =
+        await fetch(
+            "/api/turnos"
+        );
+
+    const turnos =
+        await response.json();
+
+    const tbody =
+        document.getElementById(
+            "tablaTurnos"
+        );
+
+    tbody.innerHTML = "";
+
+    if(turnos.length === 0){
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    No hay entrevistas.
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    turnos.forEach(t => {
+
+        tbody.innerHTML += `
+
+            <tr>
+
+                <td>${t.id}</td>
+
+                <td>
+                    ${t.candidato_nombre}
+                </td>
+
+                <td>
+                    ${t.puesto}
+                </td>
+
+                <td>
+                    ${t.fecha}
+                </td>
+
+                <td>
+                    ${t.hora}
+                </td>
+
+                <td>
+                    ${t.entrevistador}
+                </td>
+
+                <td>
+                    ${t.sala}
+                </td>
+
+            </tr>
+
+        `;
+
+    });
+
+}
+
+document
+.getElementById(
+    "formTurno"
+)
+.addEventListener(
+    "submit",
+    async function(e){
+
+        e.preventDefault();
+
+        const datos = {
+
+            evaluacion_id:
+                parseInt(
+                    document
+                    .getElementById(
+                        "evaluacion"
+                    )
+                    .value
+                ),
+
+            fecha:
+                document
+                .getElementById(
+                    "fecha"
+                )
+                .value,
+
+            hora:
+                document
+                .getElementById(
+                    "hora"
+                )
+                .value,
+
+            entrevistador:
+                document
+                .getElementById(
+                    "entrevistador"
+                )
+                .value,
+
+            sala:
+                document
+                .getElementById(
+                    "sala"
+                )
+                .value
+
+        };
+
+        const response =
+            await fetch(
+                "/api/turnos",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                        "application/json"
+                    },
+
+                    body:
+                    JSON.stringify(datos)
+                }
+            );
+
+        const resultado =
+            await response.json();
+
+        if(response.ok){
+
+            alert(
+                "Entrevista agendada"
+            );
+
+            document
+                .getElementById(
+                    "formTurno"
+                )
+                .reset();
+
+            cargarTurnos();
+
+        } else {
+
+            alert(
+                resultado.message
+            );
+
+        }
+
+    }
+);
+
+cargarEvaluaciones();
+cargarTurnos();
+
+</script>
 
 {% endblock %}
